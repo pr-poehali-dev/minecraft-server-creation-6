@@ -24,6 +24,9 @@ interface MinecraftServer {
 }
 
 const ACCESS_CODE = '5152';
+const API_SERVERS = 'https://functions.poehali.dev/c4277baf-518b-4c84-9db7-2b536a2e0f2c';
+const API_FILES = 'https://functions.poehali.dev/9280977d-537c-4bee-a216-c14b02e7dfc7';
+const API_DATABASES = 'https://functions.poehali.dev/82883163-8e70-4293-bdc4-0c327f88e75d';
 
 export default function Index() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,20 +53,14 @@ export default function Index() {
   }, []);
 
   const loadServers = async () => {
-    const mockServers: MinecraftServer[] = [
-      {
-        id: 1,
-        server_name: 'Survival World',
-        version: '1.20.0',
-        port: 19132,
-        max_players: 20,
-        gamemode: 'survival',
-        difficulty: 'normal',
-        status: 'running',
-        created_at: new Date().toISOString()
-      }
-    ];
-    setServers(mockServers);
+    try {
+      const response = await fetch(API_SERVERS);
+      const data = await response.json();
+      setServers(data.servers || []);
+    } catch (error) {
+      console.error('Error loading servers:', error);
+      toast.error('Ошибка загрузки серверов');
+    }
   };
 
   const handleLogin = () => {
@@ -77,48 +74,87 @@ export default function Index() {
     }
   };
 
-  const handleCreateServer = () => {
+  const handleCreateServer = async () => {
     if (!newServer.server_name) {
       toast.error('Укажите название сервера');
       return;
     }
 
-    const server: MinecraftServer = {
-      id: servers.length + 1,
-      ...newServer,
-      status: 'stopped',
-      created_at: new Date().toISOString()
-    };
+    try {
+      const response = await fetch(API_SERVERS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newServer)
+      });
 
-    setServers([...servers, server]);
-    setIsCreateDialogOpen(false);
-    toast.success(`Сервер "${newServer.server_name}" создан`);
-    
-    setNewServer({
-      server_name: '',
-      version: '1.20.0',
-      port: 19132,
-      max_players: 20,
-      gamemode: 'survival',
-      difficulty: 'normal'
-    });
-  };
-
-  const toggleServerStatus = (id: number) => {
-    setServers(servers.map(server => {
-      if (server.id === id) {
-        const newStatus = server.status === 'running' ? 'stopped' : 'running';
-        toast.success(`Сервер ${newStatus === 'running' ? 'запущен' : 'остановлен'}`);
-        return { ...server, status: newStatus };
+      if (response.ok) {
+        const createdServer = await response.json();
+        setServers([...servers, createdServer]);
+        setIsCreateDialogOpen(false);
+        toast.success(`Сервер "${newServer.server_name}" создан`);
+        
+        setNewServer({
+          server_name: '',
+          version: '1.20.0',
+          port: 19132,
+          max_players: 20,
+          gamemode: 'survival',
+          difficulty: 'normal'
+        });
+      } else {
+        toast.error('Ошибка создания сервера');
       }
-      return server;
-    }));
+    } catch (error) {
+      console.error('Error creating server:', error);
+      toast.error('Ошибка создания сервера');
+    }
   };
 
-  const deleteServer = (id: number) => {
+  const toggleServerStatus = async (id: number) => {
+    const server = servers.find(s => s.id === id);
+    if (!server) return;
+
+    const newStatus = server.status === 'running' ? 'stopped' : 'running';
+
+    try {
+      const response = await fetch(API_SERVERS, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+
+      if (response.ok) {
+        setServers(servers.map(s => 
+          s.id === id ? { ...s, status: newStatus } : s
+        ));
+        toast.success(`Сервер ${newStatus === 'running' ? 'запущен' : 'остановлен'}`);
+      } else {
+        toast.error('Ошибка изменения статуса');
+      }
+    } catch (error) {
+      console.error('Error toggling server:', error);
+      toast.error('Ошибка изменения статуса');
+    }
+  };
+
+  const deleteServer = async (id: number) => {
     const serverName = servers.find(s => s.id === id)?.server_name;
-    setServers(servers.filter(server => server.id !== id));
-    toast.success(`Сервер "${serverName}" удалён`);
+
+    try {
+      const response = await fetch(`${API_SERVERS}?id=${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setServers(servers.filter(server => server.id !== id));
+        toast.success(`Сервер "${serverName}" удалён`);
+      } else {
+        toast.error('Ошибка удаления сервера');
+      }
+    } catch (error) {
+      console.error('Error deleting server:', error);
+      toast.error('Ошибка удаления сервера');
+    }
   };
 
   if (!isAuthenticated) {

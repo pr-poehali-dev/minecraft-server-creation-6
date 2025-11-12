@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Get databases for server",
+      "method": "GET",
+      "path": "/?server_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "databases": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

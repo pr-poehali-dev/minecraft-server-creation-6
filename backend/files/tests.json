@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Get files for server",
+      "method": "GET",
+      "path": "/?server_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "files": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

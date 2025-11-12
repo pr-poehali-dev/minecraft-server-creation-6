@@ -1,0 +1,34 @@
+{
+  "tests": [
+    {
+      "name": "Get all servers",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "servers": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new server",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "server_name": "Test Server",
+        "version": "1.20.0",
+        "port": 19132,
+        "max_players": 20,
+        "gamemode": "survival",
+        "difficulty": "normal"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "server_name": "Test Server",
+        "version": "1.20.0",
+        "status": "stopped"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
